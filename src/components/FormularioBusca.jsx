@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { setQuery, setResultados, setAnimeSelecionado } from '../contexts/sliceBusca';
 import { Box, TextField, Button } from '@mui/material';
@@ -7,11 +7,11 @@ function FormularioBusca() {
   const [busca, setBusca] = useState('');
   const dispatch = useDispatch();
 
-  async function buscar() {
-    dispatch(setQuery(busca));
+  async function buscar(query = busca) {
+    dispatch(setQuery(query));
 
     try {
-      const resposta = await fetch(`https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(busca)}`);
+      const resposta = await fetch(`https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(query)}`);
 
       if (!resposta.ok) {
         throw new Error(`Erro na requisição: ${resposta.status}`);
@@ -31,6 +31,11 @@ function FormularioBusca() {
     }
   };
 
+  // Busca inicial automática com query vazia
+  useEffect(() => {
+    buscar('');
+  }, []);
+
   return (
     <Box display="flex" alignItems="center" gap={2} justifyContent="center" mb={4}>
       <TextField
@@ -41,7 +46,7 @@ function FormularioBusca() {
         size="small"
         onKeyPress={handleKeyPress}
       />
-      <Button onClick={buscar} variant="contained" color="primary">
+      <Button onClick={() => buscar()} variant="contained" color="primary">
         Buscar
       </Button>
     </Box>

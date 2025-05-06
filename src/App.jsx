@@ -1,21 +1,19 @@
 import React from 'react';
 import { Provider } from 'react-redux';
+import { Container, Typography } from '@mui/material';
 import store from './contexts/store';
-import { Container, Typography, Box } from '@mui/material';
-import FormularioBusca from './components/FormularioBusca.jsx';
-import ListaAnimes from './components/ListaAnimes.jsx';
+import FormularioBusca from './components/FormularioBusca';
+import ListaAnimes from './components/ListaAnimes';
 
 function App() {
   return (
     <Provider store={store}>
       <Container maxWidth="md">
-        <Box mt={4}>
-          <Typography variant="h3" align="center" color="primary" gutterBottom>
-              Animes FullStack
-          </Typography>
-          <FormularioBusca />
-          <ListaAnimes />
-        </Box>
+        <Typography variant="h3" align="center" color="primary" gutterBottom>
+          Buscar Animes
+        </Typography>
+        <FormularioBusca />
+        <ListaAnimes />
       </Container>
     </Provider>
   );
