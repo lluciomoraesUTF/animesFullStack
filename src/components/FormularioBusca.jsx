@@ -13,13 +13,15 @@ import {
   ListItemButton,
   ListItemText,
   Paper,
+  Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useDispatch } from 'react-redux';
-import { setResultados, setQuery } from '../contexts/sliceBusca';
+import { useDispatch, useSelector } from 'react-redux';
+import { setResultados, setQuery, setAnimeSelecionado } from '../contexts/sliceBusca';
 
 function FormularioBusca() {
   const dispatch = useDispatch();
+  const query = useSelector((state) => state.busca.query);
   const [inputValue, setInputValue] = useState('');
   const [sugestoes, setSugestoes] = useState([]);
   const [carregando, setCarregando] = useState(false);
@@ -48,6 +50,12 @@ function FormularioBusca() {
     }
   }
 
+  const navTelaInicial = () => {
+    dispatch(setAnimeSelecionado(null));
+    buscar('', 'texto'); 
+  };
+  
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (inputValue.trim()) {
@@ -74,7 +82,7 @@ function FormularioBusca() {
   }, [inputValue]);
 
   useEffect(() => {
-    async function carregarCategorias() {
+    async function buscarCategorias() {
       try {
         const resposta = await fetch('https://kitsu.io/api/edge/categories?page[limit]=20');
         const dados = await resposta.json();
@@ -84,7 +92,7 @@ function FormularioBusca() {
       }
     }
 
-    carregarCategorias();
+    buscarCategorias();
     buscar('', 'texto');
   }, []);
 
@@ -92,14 +100,17 @@ function FormularioBusca() {
     <>
       <AppBar position="static" sx={{ backgroundColor: '#1a1a1a' }}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, color: '#42a5f5' }}>
-            Animes FullStack
-          </Typography>
+          <Button color="inherit" onClick={navTelaInicial} sx={{ textTransform: 'none' }}>
+            <Typography variant="h6" sx={{ color: '#42a5f5' }}>
+              Animes FullStack
+            </Typography>
+          </Button>
 
           <IconButton
             color="inherit"
             onClick={abrirMenu}
             onMouseEnter={abrirMenu}
+            sx={{ marginLeft: 'auto' }}
           >
             <SearchIcon />
           </IconButton>
