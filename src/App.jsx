@@ -9,9 +9,7 @@ function App() {
   return (
     <Provider store={store}>
       <Container maxWidth="md">
-        <Typography variant="h3" align="center" color="primary" gutterBottom>
-          Animes FullStack
-        </Typography>
+        
         <FormularioBusca />
         <ListaAnimes />
       </Container>
