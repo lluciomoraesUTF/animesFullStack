@@ -48,7 +48,6 @@ function FormularioBusca() {
     }
   }
 
-  // Sugestões automáticas
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (inputValue.trim()) {
@@ -74,7 +73,6 @@ function FormularioBusca() {
     return () => clearTimeout(timeout);
   }, [inputValue]);
 
-  // Carregar categorias
   useEffect(() => {
     async function carregarCategorias() {
       try {
@@ -87,7 +85,7 @@ function FormularioBusca() {
     }
 
     carregarCategorias();
-    buscar('', 'texto'); // busca inicial
+    buscar('', 'texto');
   }, []);
 
   return (
