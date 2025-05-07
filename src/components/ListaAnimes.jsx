@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Grid, Typography, Box } from '@mui/material';
+import { Grid, Typography, Box, Button } from '@mui/material';
 import CardAnime from './CardAnime';
 import { setAnimeSelecionado } from '../contexts/sliceBusca';
 
@@ -13,6 +12,10 @@ function ListaAnimes() {
   if (animeSelecionado) {
     return (
       <Box mt={4}>
+        <Button variant="outlined" onClick={() => dispatch(setAnimeSelecionado(null))} sx={{ mb: 2 }}>
+          Voltar
+        </Button>
+
         <Typography variant="h4" color="primary" gutterBottom>
           Detalhes do Anime
         </Typography>

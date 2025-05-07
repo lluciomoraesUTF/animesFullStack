@@ -10,7 +10,7 @@ function App() {
     <Provider store={store}>
       <Container maxWidth="md">
         <Typography variant="h3" align="center" color="primary" gutterBottom>
-          Buscar Animes
+          Animes FullStack
         </Typography>
         <FormularioBusca />
         <ListaAnimes />
