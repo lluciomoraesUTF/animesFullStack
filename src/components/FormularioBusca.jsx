@@ -26,9 +26,13 @@ function FormularioBusca() {
   const [carregando, setCarregando] = useState(false);
   const [categorias, setCategorias] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [erroBusca, setErroBusca] = useState(false);
 
   const abrirMenu = (event) => setAnchorEl(event.currentTarget);
-  const fecharMenu = () => setAnchorEl(null);
+  const fecharMenu = () => {
+    setAnchorEl(null);
+    setErroBusca(false);
+  };
   const menuAberto = Boolean(anchorEl);
 
   const salvarHistorico = (novaQuery) => {
@@ -41,9 +45,7 @@ function FormularioBusca() {
     }
   };
 
-  const getHistorico = () => {
-    return JSON.parse(localStorage.getItem('historicoBuscas')) || [];
-  };
+  const getHistorico = () => JSON.parse(localStorage.getItem('historicoBuscas')) || [];
 
   const limparHistorico = () => {
     localStorage.removeItem('historicoBuscas');
@@ -51,10 +53,10 @@ function FormularioBusca() {
   };
 
   async function buscar(queryBusca, tipo = 'texto') {
-    if (queryBusca.trim()) {
-      dispatch(setQuery(queryBusca));
-      salvarHistorico(queryBusca);
-    }
+    if (!queryBusca.trim() && tipo !== 'texto') return;
+
+    dispatch(setQuery(queryBusca));
+    if (queryBusca.trim()) salvarHistorico(queryBusca);
 
     const filtro =
       tipo === 'categoria'
@@ -72,8 +74,7 @@ function FormularioBusca() {
 
   const navTelaInicial = () => {
     dispatch(setAnimeSelecionado(null));
-    buscar('', 'texto'); 
-    
+    buscar('', 'texto');
   };
 
   useEffect(() => {
@@ -118,7 +119,7 @@ function FormularioBusca() {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#1a1a1a' }}>
+      <AppBar position="static" sx={{ bgcolor: '#1a1a1a', borderRadius: 1 }}>
         <Toolbar>
           <Button color="inherit" onClick={navTelaInicial} sx={{ textTransform: 'none' }}>
             <Typography variant="h6" sx={{ color: '#42a5f5' }}>
@@ -141,15 +142,16 @@ function FormularioBusca() {
         open={menuAberto}
         anchorEl={anchorEl}
         onClose={fecharMenu}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: {
+            p: 2,
+            width: 300,
+            bgcolor: '#1a1a1a',
+            color: 'white',
+          },
         }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{ sx: { p: 2, width: 300 } }}
       >
         <Box display="flex" flexDirection="column" gap={2}>
           <Autocomplete
@@ -157,7 +159,10 @@ function FormularioBusca() {
             options={sugestoes}
             loading={carregando}
             inputValue={inputValue}
-            onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
+            onInputChange={(event, newInputValue) => {
+              setInputValue(newInputValue);
+              if (newInputValue.trim()) setErroBusca(false);
+            }}
             onFocus={() => {
               if (!inputValue.trim()) {
                 setSugestoes(getHistorico());
@@ -169,11 +174,34 @@ function FormularioBusca() {
                 fecharMenu();
               }
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (inputValue.trim()) {
+                  buscar(inputValue, 'texto');
+                  fecharMenu();
+                } else {
+                  setErroBusca(true);
+                }
+              }
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Buscar anime"
                 variant="outlined"
+                error={erroBusca}
+                helperText={erroBusca ? 'Digite algo para buscar' : ''}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    color: 'white',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: erroBusca ? '#f44336' : '#42a5f5',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: erroBusca ? '#f44336' : '#42a5f5',
+                  },
+                }}
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
@@ -187,17 +215,30 @@ function FormularioBusca() {
             )}
           />
 
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="subtitle2">Categorias</Typography>
-            <Button size="small" onClick={limparHistorico}>
-              Limpar histórico
-            </Button>
-          </Box>
+          <Button
+            variant="outlined"
+            sx={{ borderColor: '#42a5f5', color: '#42a5f5' }}
+            onClick={() => {
+              if (inputValue.trim()) {
+                buscar(inputValue, 'texto');
+                fecharMenu();
+              } else {
+                setErroBusca(true);
+              }
+            }}
+          >
+            Buscar
+          </Button>
 
-          <Paper sx={{ maxHeight: 200, overflow: 'auto' }}>
+          <Typography variant="subtitle2" sx={{ color: '#42a5f5', mb: 1 }}>
+            Categorias
+          </Typography>
+
+          <Paper sx={{ maxHeight: 200, overflow: 'auto', bgcolor: '#1a1a1a' }}>
             <List dense>
               {categorias.map((categoria) => (
                 <ListItemButton
+                  sx={{ color: '#42a5f5', mb: 1, borderBottom: '1px solid #1a1a1a' }}
                   key={categoria.id}
                   onClick={() => {
                     buscar(categoria.attributes.slug, 'categoria');
@@ -209,6 +250,20 @@ function FormularioBusca() {
               ))}
             </List>
           </Paper>
+
+          <Button
+            onClick={limparHistorico}
+            sx={{
+              mt: 2,
+              color: '#42a5f5',
+              textTransform: 'uppercase',
+              fontSize: 12,
+              display: 'block',
+              mx: 'auto',
+            }}
+          >
+            Limpar histórico
+          </Button>
         </Box>
       </Popover>
     </>

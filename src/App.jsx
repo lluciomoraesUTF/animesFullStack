@@ -1,6 +1,6 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import { Container, Typography } from '@mui/material';
+import { Box, CssBaseline } from '@mui/material';
 import store from './contexts/store';
 import FormularioBusca from './components/FormularioBusca';
 import ListaAnimes from './components/ListaAnimes';
@@ -8,11 +8,19 @@ import ListaAnimes from './components/ListaAnimes';
 function App() {
   return (
     <Provider store={store}>
-      <Container maxWidth="md">
-        
+      <CssBaseline />
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: '#000',  
+          color: '#fff',
+        }}
+      >
         <FormularioBusca />
-        <ListaAnimes />
-      </Container>
+        <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
+          <ListaAnimes />
+        </Box>
+      </Box>
     </Provider>
   );
 }

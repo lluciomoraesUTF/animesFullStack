@@ -1,5 +1,12 @@
 import React from 'react';
-import { Card, CardMedia, CardContent, Typography, Box } from '@mui/material';
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Box,
+  Chip
+} from '@mui/material';
 
 function CardAnime({ anime, modoDetalhe = false, onClick }) {
   if (!anime) return null;
@@ -7,17 +14,18 @@ function CardAnime({ anime, modoDetalhe = false, onClick }) {
 
   return (
     <Card
+      onClick={onClick}
       sx={{
-        bgcolor: '#000',
-        color: '#fff',
+        width: modoDetalhe ? '100%' : 320,
+        bgcolor: '#1a1a1a',
         display: 'flex',
         flexDirection: modoDetalhe ? 'row' : 'column',
         gap: 2,
         p: 2,
-        alignItems: 'center',
+        alignItems: modoDetalhe ? 'flex-start' : 'left',
         cursor: onClick ? 'pointer' : 'default',
+        color: '#fff',
       }}
-      onClick={onClick}
     >
       {info.posterImage?.medium && (
         <CardMedia
@@ -25,31 +33,48 @@ function CardAnime({ anime, modoDetalhe = false, onClick }) {
           image={info.posterImage.medium}
           alt={info.titles.en_jp}
           sx={{
-            width: modoDetalhe ? 200 : '100%',
-            height: modoDetalhe ? 300 : 200,
-            objectFit: 'cover',
+            width: modoDetalhe ? 220 : '100%',
+            height: modoDetalhe ? 330 : 420, 
+            objectFit: 'cover', 
             borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            backgroundColor: '#000'
           }}
         />
       )}
-      <CardContent sx={{ flex: 1 }}>
-        <Typography variant="h5" color="primary">
+
+      <CardContent sx={{ flex: 1, textAlign: modoDetalhe ? 'left' : 'center' }}>
+        <Typography
+          variant={modoDetalhe ? 'h4' : 'h6'}
+          color="primary"
+          gutterBottom
+          noWrap={!modoDetalhe}
+        >
           {info.titles.en_jp}
         </Typography>
-        {info.synopsis && modoDetalhe && (
-          <Typography variant="body2" mt={2}>
-            {info.synopsis}
-          </Typography>
-        )}
-        {info.startDate && (
-          <Typography variant="body1">
-            <strong>Início:</strong> {info.startDate}
-          </Typography>
-        )}
-        {info.endDate && (
-          <Typography variant="body1">
-            <strong>Fim:</strong> {info.endDate}
-          </Typography>
+
+        <Typography variant="body2" color="#fff" sx={{ textAlign: 'left' }}>
+          <strong>Início:</strong> {info.startDate || '—'}
+        </Typography>
+        <Typography variant="body2" color="#fff" mb={modoDetalhe ? 2 : 0} sx={{ textAlign: 'left' }}>
+          <strong>Fim:</strong> {info.endDate || '—'}
+        </Typography>
+
+        {modoDetalhe && (
+          <>
+            <Typography variant="body2" color="#fff" paragraph>
+              {info.synopsis || 'Sem sinopse disponível.'}
+            </Typography>
+            <Box display="flex" gap={1} flexWrap="wrap">
+              {info.averageRating && (
+                <Chip label={`Rating: ${info.averageRating}%`} size="small" color="primary" />
+              )}
+              {info.episodeCount && (
+                <Chip label={`Eps: ${info.episodeCount}`} size="small" color="primary" />
+              )}
+            </Box>
+          </>
         )}
       </CardContent>
     </Card>
