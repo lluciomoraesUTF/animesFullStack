@@ -16,30 +16,50 @@ import {
   Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { setResultados, setQuery, setAnimeSelecionado } from '../contexts/sliceBusca';
 
 function FormularioBusca() {
   const dispatch = useDispatch();
-  const query = useSelector((state) => state.busca.query);
   const [inputValue, setInputValue] = useState('');
   const [sugestoes, setSugestoes] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [categorias, setCategorias] = useState([]);
-
   const [anchorEl, setAnchorEl] = useState(null);
 
   const abrirMenu = (event) => setAnchorEl(event.currentTarget);
   const fecharMenu = () => setAnchorEl(null);
   const menuAberto = Boolean(anchorEl);
 
-  async function buscar(query, tipo = 'texto') {
-    dispatch(setQuery(query));
+  const salvarHistorico = (novaQuery) => {
+    if (!novaQuery.trim()) return;
+    const historico = JSON.parse(localStorage.getItem('historicoBuscas')) || [];
+    if (!historico.includes(novaQuery)) {
+      historico.unshift(novaQuery);
+      if (historico.length > 10) historico.pop();
+      localStorage.setItem('historicoBuscas', JSON.stringify(historico));
+    }
+  };
+
+  const getHistorico = () => {
+    return JSON.parse(localStorage.getItem('historicoBuscas')) || [];
+  };
+
+  const limparHistorico = () => {
+    localStorage.removeItem('historicoBuscas');
+    setSugestoes([]);
+  };
+
+  async function buscar(queryBusca, tipo = 'texto') {
+    if (queryBusca.trim()) {
+      dispatch(setQuery(queryBusca));
+      salvarHistorico(queryBusca);
+    }
 
     const filtro =
       tipo === 'categoria'
-        ? `filter[categories]=${encodeURIComponent(query)}`
-        : `filter[text]=${encodeURIComponent(query)}`;
+        ? `filter[categories]=${encodeURIComponent(queryBusca)}`
+        : `filter[text]=${encodeURIComponent(queryBusca)}`;
 
     try {
       const resposta = await fetch(`https://kitsu.io/api/edge/anime?${filtro}`);
@@ -53,8 +73,8 @@ function FormularioBusca() {
   const navTelaInicial = () => {
     dispatch(setAnimeSelecionado(null));
     buscar('', 'texto'); 
+    
   };
-  
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -74,7 +94,7 @@ function FormularioBusca() {
             setCarregando(false);
           });
       } else {
-        setSugestoes([]);
+        setSugestoes(getHistorico());
       }
     }, 500);
 
@@ -137,8 +157,11 @@ function FormularioBusca() {
             options={sugestoes}
             loading={carregando}
             inputValue={inputValue}
-            onInputChange={(event, newInputValue) => {
-              setInputValue(newInputValue);
+            onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
+            onFocus={() => {
+              if (!inputValue.trim()) {
+                setSugestoes(getHistorico());
+              }
             }}
             onChange={(event, value) => {
               if (value?.trim()) {
@@ -155,9 +178,7 @@ function FormularioBusca() {
                   ...params.InputProps,
                   endAdornment: (
                     <>
-                      {carregando ? (
-                        <CircularProgress color="inherit" size={20} />
-                      ) : null}
+                      {carregando ? <CircularProgress color="inherit" size={20} /> : null}
                       {params.InputProps.endAdornment}
                     </>
                   ),
@@ -166,7 +187,13 @@ function FormularioBusca() {
             )}
           />
 
-          <Typography variant="subtitle2">Categorias</Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle2">Categorias</Typography>
+            <Button size="small" onClick={limparHistorico}>
+              Limpar histórico
+            </Button>
+          </Box>
+
           <Paper sx={{ maxHeight: 200, overflow: 'auto' }}>
             <List dense>
               {categorias.map((categoria) => (
