@@ -17,10 +17,15 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { setResultados, setQuery, setAnimeSelecionado } from '../contexts/sliceBusca';
+import { useAuth } from '../contexts/sliceAuth'; 
 
 function FormularioBusca() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { logout } = useAuth(); 
+
   const [inputValue, setInputValue] = useState('');
   const [sugestoes, setSugestoes] = useState([]);
   const [carregando, setCarregando] = useState(false);
@@ -50,6 +55,11 @@ function FormularioBusca() {
   const limparHistorico = () => {
     localStorage.removeItem('historicoBuscas');
     setSugestoes([]);
+  };
+
+  const handleLogout = () => {
+    logout(); 
+    navigate('/login'); 
   };
 
   async function buscar(queryBusca, tipo = 'texto') {
@@ -120,7 +130,7 @@ function FormularioBusca() {
   return (
     <>
       <AppBar position="static" sx={{ bgcolor: '#1a1a1a', borderRadius: 1 }}>
-      <Toolbar>
+        <Toolbar>
           <Button color="inherit" onClick={navTelaInicial} sx={{ textTransform: 'none' }}>
             <Typography variant="h6" sx={{ color: '#42a5f5' }}>
               Animes FullStack
@@ -137,16 +147,12 @@ function FormularioBusca() {
           </IconButton>
 
           <Button
-            onClick={() => {
-              localStorage.removeItem('token');
-              window.location.href = '/login';
-            }}
+            onClick={handleLogout}
             sx={{ color: '#f44336', textTransform: 'none', marginLeft: 2 }}
           >
             Logout
           </Button>
         </Toolbar>
-
       </AppBar>
 
       <Popover
