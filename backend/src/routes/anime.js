@@ -1,6 +1,7 @@
 const express = require('express');
+const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
-const FavoriteAnime = require('../models/anime');
+const Anime = require('../models/anime');
 const User = require('../models/user');
 
 const router = express.Router();
@@ -19,56 +20,72 @@ function autenticar(req, res, next) {
   }
 }
 
-router.get('/favoritos', autenticar, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const favoritos = await FavoriteAnime.findAll({
-      where: { userId: req.user.id },
-    });
-    res.json(favoritos);
+    const animes = await Anime.findAll();
+    res.json(animes);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar favoritos.' });
+    res.status(500).json({ error: 'Erro ao buscar animes.' });
   }
 });
 
-router.post('/favoritos', autenticar, async (req, res) => {
-  const { animeId, titulo, dados } = req.body;
+router.get('/buscar', async (req, res) => {
+  const { titulo } = req.query;
 
   try {
-    const jaExiste = await FavoriteAnime.findOne({
-      where: { userId: req.user.id, animeId },
-    });
-
-    if (jaExiste) {
-      return res.status(400).json({ error: 'Anime já favoritado.' });
-    }
-
-    const favorito = await FavoriteAnime.create({
-      animeId,
-      titulo,
-      dados,
-      userId: req.user.id,
-    });
-
-    res.status(201).json(favorito);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao favoritar anime.' });
-  }
-});
-
-router.delete('/favoritos/:id', autenticar, async (req, res) => {
-  try {
-    const deleted = await FavoriteAnime.destroy({
+    const animes = await Anime.findAll({
       where: {
-        userId: req.user.id,
-        animeId: req.params.id,
+        titulo: {
+          [Op.iLike]: `%${titulo}%`,
+        },
       },
     });
 
-    if (!deleted) return res.status(404).json({ error: 'Anime não encontrado.' });
+    res.json(animes);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar por título.' });
+  }
+});
 
+router.post('/', autenticar, async (req, res) => {
+  const { titulo, poster, startDate, endDate, synopsis, averageRating, episodeCount } = req.body;
+
+  try {
+    const anime = await Anime.create({
+      titulo,
+      poster,
+      startDate,
+      endDate,
+      synopsis,
+      averageRating,
+      episodeCount,
+      userId: req.user.id,
+    });
+
+    res.status(201).json(anime);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao criar anime.' });
+  }
+});
+
+router.delete('/:id', autenticar, async (req, res) => {
+  const animeId = req.params.id;
+
+  try {
+    const anime = await Anime.findOne({ where: { id: animeId } });
+
+    if (!anime) {
+      return res.status(404).json({ error: 'Anime não encontrado.' });
+    }
+
+    if (anime.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Você não tem permissão para deletar este anime.' });
+    }
+
+    await anime.destroy();
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao remover favorito.' });
+    res.status(500).json({ error: 'Erro ao deletar anime.' });
   }
 });
 

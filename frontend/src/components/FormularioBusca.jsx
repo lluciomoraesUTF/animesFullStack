@@ -13,19 +13,29 @@ import {
   ListItemButton,
   ListItemText,
   Paper,
+  Avatar,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogActions,
   Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { setResultados, setQuery, setAnimeSelecionado } from '../contexts/sliceBusca';
+import { setResultados, setQuery } from '../contexts/sliceBusca';
 import { useAuth } from '../contexts/sliceAuth';
+
+function getInitials(email) {
+  return email?.[0]?.toUpperCase() || '?';
+}
 
 function FormularioBusca() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, isAutenticado } = useAuth();
 
   const [inputValue, setInputValue] = useState('');
   const [sugestoes, setSugestoes] = useState([]);
@@ -33,6 +43,7 @@ function FormularioBusca() {
   const [categorias, setCategorias] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [erroBusca, setErroBusca] = useState(false);
+  const [confirmarLogout, setConfirmarLogout] = useState(false);
 
   const abrirMenu = (e) => setAnchorEl(e.currentTarget);
   const fecharMenu = () => {
@@ -104,13 +115,39 @@ function FormularioBusca() {
     buscar('', 'texto');
   }, []);
 
+  let email = '';
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      email = payload?.email || '';
+    }
+  } catch (e) {
+    console.warn('Token inválido ou ausente:', e.message);
+  }
+
+  const confirmarSaida = () => setConfirmarLogout(true);
+  const cancelarSaida = () => setConfirmarLogout(false);
+  const sair = () => {
+    logout();
+    navigate('/login');
+    setConfirmarLogout(false);
+  };
+
   return (
     <>
       <AppBar position="static" sx={{ bgcolor: '#1a1a1a', borderRadius: 1 }}>
         <Toolbar>
-          <Button color="inherit" onClick={() => buscar('', 'texto')} sx={{ textTransform: 'none' }}>
-            <Typography variant="h6" sx={{ color: '#42a5f5' }}>Animes FullStack</Typography>
-          </Button>
+          <Typography
+            variant="h6"
+            sx={{ color: '#42a5f5', cursor: 'pointer' }}
+            onClick={() => {
+              buscar('', 'texto');
+              navigate('/');
+            }}
+          >
+            Animes FullStack
+          </Typography>
 
           <IconButton color="inherit" onClick={abrirMenu} onMouseEnter={abrirMenu} sx={{ marginLeft: 'auto' }}>
             <SearchIcon />
@@ -120,24 +157,86 @@ function FormularioBusca() {
             <FavoriteIcon />
           </IconButton>
 
-          <Button onClick={() => { logout(); navigate('/login'); }} sx={{ color: '#f44336', marginLeft: 2 }}>
-            Logout
-          </Button>
+          {isAutenticado ? (
+            <>
+              <Tooltip title={email || ''}>
+                <Avatar sx={{ bgcolor: '#42a5f5', width: 32, height: 32, fontSize: 14, ml: 1 }}>
+                  {getInitials(email)}
+                </Avatar>
+              </Tooltip>
+
+              <IconButton onClick={confirmarSaida} sx={{ ml: 1 }}>
+                <PowerSettingsNewIcon sx={{ color: '#f44336' }} />
+              </IconButton>
+            </>
+          ) : (
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/login')}
+              sx={{
+                ml: 2,
+                borderColor: '#42a5f5',
+                color: '#42a5f5',
+                '&:hover': {
+                  borderColor: '#64b5f6',
+                  color: '#64b5f6',
+                },
+              }}
+            >
+              Login
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
-      <Popover open={menuAberto} anchorEl={anchorEl} onClose={fecharMenu} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{ sx: { p: 2, width: 300, bgcolor: '#1a1a1a', color: 'white' } }}>
+      {}
+      <Dialog open={confirmarLogout} onClose={cancelarSaida}>
+        <DialogTitle>Deseja realmente sair?</DialogTitle>
+        <DialogActions>
+          <Button onClick={cancelarSaida}>Cancelar</Button>
+          <Button onClick={sair} color="error" variant="contained">
+            Sair
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Popover
+        open={menuAberto}
+        anchorEl={anchorEl}
+        onClose={fecharMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ sx: { p: 2, width: 300, bgcolor: '#1a1a1a', color: 'white' } }}
+      >
         <Box display="flex" flexDirection="column" gap={2}>
           <Autocomplete
             freeSolo
             options={sugestoes}
             loading={carregando}
             inputValue={inputValue}
-            onInputChange={(e, v) => { setInputValue(v); if (v.trim()) setErroBusca(false); }}
-            onFocus={() => { if (!inputValue.trim()) setSugestoes(getHistorico()); }}
-            onChange={(e, v) => { if (v?.trim()) { buscar(v, 'texto'); fecharMenu(); } }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { if (inputValue.trim()) { buscar(inputValue, 'texto'); fecharMenu(); } else { setErroBusca(true); } } }}
+            onInputChange={(e, v) => {
+              setInputValue(v);
+              if (v.trim()) setErroBusca(false);
+            }}
+            onFocus={() => {
+              if (!inputValue.trim()) setSugestoes(getHistorico());
+            }}
+            onChange={(e, v) => {
+              if (v?.trim()) {
+                buscar(v, 'texto');
+                fecharMenu();
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (inputValue.trim()) {
+                  buscar(inputValue, 'texto');
+                  fecharMenu();
+                } else {
+                  setErroBusca(true);
+                }
+              }
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -145,7 +244,15 @@ function FormularioBusca() {
                 variant="outlined"
                 error={erroBusca}
                 helperText={erroBusca ? 'Digite algo para buscar' : ''}
-                sx={{ '& .MuiInputBase-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: erroBusca ? '#f44336' : '#42a5f5' }, '& .MuiInputLabel-root': { color: erroBusca ? '#f44336' : '#42a5f5' } }}
+                sx={{
+                  '& .MuiInputBase-root': { color: 'white' },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: erroBusca ? '#f44336' : '#42a5f5',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: erroBusca ? '#f44336' : '#42a5f5',
+                  },
+                }}
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
@@ -159,24 +266,34 @@ function FormularioBusca() {
             )}
           />
 
-          <Button variant="outlined" sx={{ borderColor: '#42a5f5', color: '#42a5f5' }}
-            onClick={() => { if (inputValue.trim()) { buscar(inputValue, 'texto'); fecharMenu(); } else { setErroBusca(true); } }}>
-            Buscar
-          </Button>
-
-          <Typography variant="subtitle2" sx={{ color: '#42a5f5', mb: 1 }}>Categorias</Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle2" sx={{ color: '#42a5f5' }}>
+              Categorias
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: '#42a5f5', cursor: 'pointer' }}
+              onClick={limparHistorico}
+            >
+              Limpar histórico
+            </Typography>
+          </Box>
 
           <Paper sx={{ maxHeight: 200, overflow: 'auto', bgcolor: '#1a1a1a' }}>
             <List dense>
               {categorias.map((cat) => (
-                <ListItemButton key={cat.id} onClick={() => { buscar(cat.attributes.slug, 'categoria'); fecharMenu(); }}>
+                <ListItemButton
+                  key={cat.id}
+                  onClick={() => {
+                    buscar(cat.attributes.slug, 'categoria');
+                    fecharMenu();
+                  }}
+                >
                   <ListItemText primary={cat.attributes.title} sx={{ color: '#42a5f5' }} />
                 </ListItemButton>
               ))}
             </List>
           </Paper>
-
-          <Button onClick={limparHistorico} sx={{ mt: 2, color: '#42a5f5', fontSize: 12, textTransform: 'uppercase' }}>Limpar histórico</Button>
         </Box>
       </Popover>
     </>

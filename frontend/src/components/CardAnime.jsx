@@ -17,7 +17,6 @@ import { useAuth } from '../contexts/sliceAuth';
 
 function normalizar(raw) {
   if (!raw) return null;
-  // Formato Kitsu
   if (raw.attributes) {
     const a = raw.attributes;
     return {
@@ -32,7 +31,6 @@ function normalizar(raw) {
       full: raw,
     };
   }
-  // Formato vindo do backend
   if (raw.dados?.attributes) return normalizar(raw.dados);
 
   return {

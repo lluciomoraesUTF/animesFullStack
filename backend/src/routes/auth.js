@@ -6,6 +6,7 @@ const User = require('../models/user');
 const router = express.Router();
 const SECRET = 'JWToken';
 
+// Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -18,7 +19,6 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: '1d' });
     res.json({ token });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Erro no login.' });
   }
 });

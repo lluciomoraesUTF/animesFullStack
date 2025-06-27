@@ -17,22 +17,25 @@ function Rotas() {
 
   return (
     <Routes>
+      {}
       <Route
         path="/"
         element={
-          isAutenticado ? (
-            <>
-              <FormularioBusca />
-              <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
-                <ListaAnimes />
-              </Box>
-            </>
-          ) : (
-            <Navigate to="/login" />
-          )
+          <>
+            <FormularioBusca />
+            <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
+              <ListaAnimes />
+            </Box>
+          </>
         }
       />
-      <Route path="/favoritos" element={isAutenticado ? <Favorito /> : <Navigate to="/login" />} />
+
+      {}
+      <Route
+        path="/favoritos"
+        element={isAutenticado ? <Favorito /> : <Navigate to="/login" />}
+      />
+
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="*" element={<Navigate to="/" />} />

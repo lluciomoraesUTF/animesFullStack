@@ -1,23 +1,21 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const User = require('./user');
 
-const FavoriteAnime = sequelize.define('FavoriteAnime', {
-  animeId: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
+const Anime = sequelize.define('Anime', {
   titulo: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  dados: {
-    type: DataTypes.JSON,
+  poster: DataTypes.STRING,
+  startDate: DataTypes.DATEONLY,
+  endDate: DataTypes.DATEONLY,
+  synopsis: DataTypes.TEXT,
+  averageRating: DataTypes.STRING,
+  episodeCount: DataTypes.INTEGER,
+  userId: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
 });
 
-User.hasMany(FavoriteAnime, { foreignKey: 'userId' });
-FavoriteAnime.belongsTo(User, { foreignKey: 'userId' });
-
-module.exports = FavoriteAnime;
+module.exports = Anime;
