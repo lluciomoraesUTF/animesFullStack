@@ -6,7 +6,6 @@ const User = require('../models/user');
 const router = express.Router();
 const SECRET = 'JWToken';
 
-// Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
