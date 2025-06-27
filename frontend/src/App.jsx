@@ -10,6 +10,7 @@ import FormularioBusca from './components/FormularioBusca';
 import ListaAnimes from './components/ListaAnimes';
 import Login from './components/Login';
 import Cadastro from './components/Cadastro';
+import Favorito from './components/Favoritos';
 
 function Rotas() {
   const { isAutenticado } = useAuth();
@@ -31,6 +32,7 @@ function Rotas() {
           )
         }
       />
+      <Route path="/favoritos" element={isAutenticado ? <Favorito /> : <Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="*" element={<Navigate to="/" />} />
