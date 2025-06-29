@@ -4,14 +4,29 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
-const User = require('../models/user'); 
+const User = require('../models/user');
+
+// Winston incluído diretamente
+const winston = require('winston');
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/app.log' }), // cria pasta logs automaticamente
+  ],
+});
 
 const router = express.Router();
 const SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
+// Limita tentativas de login para evitar brute force
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 10, 
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { error: 'Muitas tentativas de login. Tente novamente mais tarde.' },
 });
 
@@ -25,6 +40,7 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn(`Login inválido: dados malformados - IP: ${req.ip}`);
       return res.status(400).json({ error: 'Dados inválidos.', detalhes: errors.array() });
     }
 
@@ -32,8 +48,9 @@ router.post(
 
     try {
       const user = await User.findOne({ where: { email } });
+
       if (!user || !(await bcrypt.compare(password, user.password))) {
-        console.warn(`Tentativa de login inválida para o email: ${email}`);
+        logger.warn(`Falha de login: email=${email}, IP=${req.ip}`);
         return res.status(401).json({ error: 'Credenciais inválidas.' });
       }
 
@@ -43,9 +60,10 @@ router.post(
         { expiresIn: '1d' }
       );
 
+      logger.info(`Login bem-sucedido: email=${email}, IP=${req.ip}`);
       res.json({ token });
     } catch (err) {
-      console.error('Erro no login:', err);
+      logger.error(`Erro interno no login: ${err.message}`, { stack: err.stack, ip: req.ip });
       res.status(500).json({ error: 'Erro interno no login.' });
     }
   }
