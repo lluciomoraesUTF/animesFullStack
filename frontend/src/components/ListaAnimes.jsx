@@ -142,7 +142,7 @@ function ListaAnimes() {
     <Box minHeight="100vh" bgcolor="#000" color="white" p={4}>
       <Grid container spacing={3} justifyContent="center">
         {resultados.map((anime) => (
-          <Grid key={anime.id}>
+          <Grid item key={anime.id} xs={12} sm={6} md={4} lg={3} xl={2}>
             <CardAnime
               anime={anime}
               onClick={() => dispatch(setAnimeSelecionado(anime))}
