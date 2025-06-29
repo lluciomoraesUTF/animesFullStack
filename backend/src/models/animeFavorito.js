@@ -1,23 +1,37 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const User = require('./user');
 
-const animeFavorito = sequelize.define('animeFavorito', {
-  animeId: {
+const user = sequelize.define('user', {  
+  nome: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  titulo: {
+  email: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false,
+  },
+  password: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  dados: {
-    type: DataTypes.JSON,
+  nascimento: {
+    type: DataTypes.DATEONLY,
     allowNull: false,
   },
 });
 
-User.hasMany(FavoriteAnime, { foreignKey: 'userId' });
-FavoriteAnime.belongsTo(User, { foreignKey: 'userId' });
+// Correção do nome do objeto para User e da função associate
+user.associate = (models) => {
+  user.hasMany(models.Anime, {
+    foreignKey: 'userId',
+    as: 'animesCriados',
+  });
 
-module.exports = animeFavorito;
+  user.hasMany(models.Favorito, {
+    foreignKey: 'userId',
+    as: 'favoritos',
+  });
+};
+
+module.exports = user;

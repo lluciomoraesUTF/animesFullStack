@@ -1,44 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import {
-  AppBar,
-  Toolbar,
   Typography,
-  IconButton,
   Grid,
-  Container,
-  Button,
-  Box,
+  CircularProgress,
+  Box
 } from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { adicionarFavorito, limparFavoritos } from '../contexts/sliceFavoritos';
-import { useAuth } from '../contexts/sliceAuth';
-import CardAnime from './CardAnime';
+import CardAnime from '../components/CardAnime'; 
 
 function Favoritos() {
   const favoritos = useSelector((state) => state.favoritos.favoritos);
   const [carregando, setCarregando] = useState(true);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-
   const token = localStorage.getItem('token');
 
   useEffect(() => {
     const carregarFavoritos = async () => {
+      if (!token) {
+        setCarregando(false);
+        return;
+      }
+
       try {
         const res = await fetch('http://localhost:4000/api/favoritos', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+
         const data = await res.json();
+
         if (res.ok) {
           dispatch(limparFavoritos());
-          data.forEach((fav) => {
-            dispatch(adicionarFavorito(fav));
-          });
+          data.forEach((fav) => dispatch(adicionarFavorito(fav)));
         } else {
           console.error('Erro ao carregar favoritos:', data.error);
         }
@@ -52,54 +47,48 @@ function Favoritos() {
     carregarFavoritos();
   }, [dispatch, token]);
 
-  const handleLogout = () => {
-    dispatch(limparFavoritos());
-    logout();
-    navigate('/login');
-  };
+  if (!token) {
+    return (
+      <Box minHeight="100vh" bgcolor="#000" display="flex" alignItems="center" justifyContent="center">
+        <Typography variant="h6" color="white">
+          Você precisa estar logado para ver seus favoritos.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <>
-      {}
-      <AppBar position="static" sx={{ bgcolor: '#1a1a1a', borderRadius: 1 }}>
-        <Toolbar>
-          <Button color="inherit" onClick={() => navigate('/')} sx={{ textTransform: 'none' }}>
-            <Typography variant="h6" sx={{ color: '#42a5f5' }}>
-              Animes FullStack
-            </Typography>
-          </Button>
+    <Box minHeight="100vh" bgcolor="#000" color="white" p={4}>
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        sx={{ color: '#42a5f5', fontWeight: 'bold', textAlign: 'center', mb: 4 }}
+      >
+        Meus Favoritos
+      </Typography>
 
-          <IconButton color="inherit" onClick={() => navigate('/favoritos')} sx={{ marginLeft: 'auto' }}>
-            <FavoriteIcon />
-          </IconButton>
-
-          <Button onClick={handleLogout} sx={{ color: '#f44336', marginLeft: 2 }}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      {}
-      <Container sx={{ mt: 4 }}>
-        <Typography variant="h4" color="primary" gutterBottom>
-          Meus Favoritos
+      {carregando ? (
+        <Box display="flex" justifyContent="center" alignItems="center" mt={8}>
+          <CircularProgress color="inherit" />
+        </Box>
+      ) : favoritos.length === 0 ? (
+        <Typography align="center" color="gray">
+          Nenhum anime favoritado.
         </Typography>
-
-        {carregando ? (
-          <Typography color="textSecondary">Carregando favoritos...</Typography>
-        ) : favoritos.length === 0 ? (
-          <Typography color="textSecondary">Nenhum anime favoritado.</Typography>
-        ) : (
-          <Grid container spacing={2}>
-            {favoritos.map((anime) => (
-              <Grid item xs={12} sm={6} md={4} key={anime.animeId || anime.id}>
-                <CardAnime anime={anime} />
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Container>
-    </>
+      ) : (
+        <Grid container spacing={3} justifyContent="center">
+          {favoritos.map((fav) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={fav.id}>
+              <CardAnime 
+                anime={fav} 
+                isFavorito={true} 
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+    </Box>
   );
 }
 

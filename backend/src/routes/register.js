@@ -4,7 +4,6 @@ const User = require('../models/user');
 
 const router = express.Router();
 
-// Registro de novo usuário
 router.post('/register', async (req, res) => {
   const { nome, email, password, nascimento } = req.body;
 

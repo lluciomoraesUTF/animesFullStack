@@ -1,84 +1,72 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Card,
-  CardMedia,
-  CardContent,
   Typography,
-  Box,
-  Chip,
+  Card,
+  CardContent,
+  CardMedia,
   IconButton,
-  Snackbar,
+  Box,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useDispatch, useSelector } from 'react-redux';
 import { adicionarFavorito, removerFavorito } from '../contexts/sliceFavoritos';
-import { useAuth } from '../contexts/sliceAuth';
 
-function normalizar(raw) {
-  if (!raw) return null;
-  if (raw.attributes) {
-    const a = raw.attributes;
-    return {
-      id: raw.id,
-      titulo: a.titles?.en_jp || a.titles?.ja_jp || a.slug,
-      poster: a.posterImage?.medium,
-      inicio: a.startDate,
-      fim: a.endDate,
-      sinopse: a.synopsis,
-      rating: a.averageRating,
-      episodios: a.episodeCount,
-      full: raw,
-    };
-  }
-  if (raw.dados?.attributes) return normalizar(raw.dados);
-
-  return {
-    id: raw.animeId || raw.id,
-    titulo: raw.titulo || raw.title,
-    poster: raw.poster || raw.image,
-    inicio: raw.startDate,
-    fim: raw.endDate,
-    sinopse: raw.synopsis,
-    rating: raw.averageRating,
-    episodios: raw.episodeCount,
-    full: raw,
-  };
+function formatarData(dataStr) {
+  if (!dataStr) return '––';
+  const data = new Date(dataStr);
+  return data.toLocaleDateString('pt-BR');
 }
 
-function CardAnime({ anime, modoDetalhe = false, onClick }) {
-  const info = normalizar(anime);
-  if (!info) return null;
-
+function CardAnime({ anime, onClick, modoDetalhe = false, isFavorito = false }) {
   const dispatch = useDispatch();
-  const favoritos = useSelector((s) => s.favoritos.favoritos);
-  const { isAutenticado } = useAuth();
-  const [snack, setSnack] = useState(false);
-
-  const isFav = favoritos.some((f) => f.animeId === info.id);
+  const favoritos = useSelector((state) => state.favoritos.favoritos);
   const token = localStorage.getItem('token');
 
-  const toggleFav = async (e) => {
-    e.stopPropagation();
-    if (!isAutenticado || !token) return alert('Faça login para salvar favoritos');
+  const animeData = isFavorito ? anime.anime : anime;
 
-    if (isFav) {
-      await fetch(`http://localhost:4000/api/favoritos/${info.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      dispatch(removerFavorito(info.id));
-    } else {
-      await fetch('http://localhost:4000/api/favoritos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ animeId: info.id, titulo: info.titulo, dados: info.full }),
-      });
-      dispatch(adicionarFavorito({ animeId: info.id, titulo: info.titulo, dados: info.full }));
-      setSnack(true);
+  if (!animeData) {
+    console.error("Dados do anime inválidos recebidos pelo CardAnime:", anime);
+    return null;
+  }
+
+  const favoritoNaLista = favoritos.find((fav) => fav.animeId === animeData.id);
+  const jaFavoritado = Boolean(favoritoNaLista);
+
+  const handleToggleFavorito = async (e) => {
+    e.stopPropagation();
+
+    if (!token) {
+      alert('Você precisa estar logado para favoritar.');
+      return;
+    }
+
+    try {
+      if (jaFavoritado) {
+        const idParaDeletar = favoritoNaLista.id;
+        const response = await fetch(`http://localhost:4000/api/favoritos/${idParaDeletar}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) throw new Error('Erro ao remover favorito');
+        dispatch(removerFavorito(idParaDeletar));
+      } else {
+        const response = await fetch('http://localhost:4000/api/favoritos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ animeId: animeData.id }),
+        });
+
+        if (!response.ok) throw new Error('Erro ao adicionar favorito');
+        const novoFavoritoCompleto = await response.json();
+        dispatch(adicionarFavorito(novoFavoritoCompleto));
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar favorito:', err);
+      alert('Ocorreu um erro ao atualizar o favorito.');
     }
   };
 
@@ -86,71 +74,60 @@ function CardAnime({ anime, modoDetalhe = false, onClick }) {
     <Card
       onClick={onClick}
       sx={{
-        width: modoDetalhe ? '100%' : 320,
-        bgcolor: '#1a1a1a',
+        bgcolor: '#1e1e1e',
+        color: 'white',
+        width: 250,
         display: 'flex',
-        flexDirection: modoDetalhe ? 'row' : 'column',
-        gap: 2,
-        p: 2,
+        flexDirection: 'column',
         cursor: onClick ? 'pointer' : 'default',
-        color: '#fff',
+        '&:hover': {
+          boxShadow: onClick ? '0 0 10px #2196f3' : 'none',
+        },
       }}
     >
-      {info.poster && (
+      {animeData.poster && (
         <CardMedia
           component="img"
-          image={info.poster}
-          alt={info.titulo}
-          sx={{
-            width: modoDetalhe ? 220 : '100%',
-            height: modoDetalhe ? 330 : 420,
-            objectFit: 'cover',
-            borderRadius: 2,
-          }}
+          image={animeData.poster}
+          alt={`Poster de ${animeData.titulo}`}
+          sx={{ height: 350, objectFit: 'cover' }}
         />
       )}
 
-      <CardContent sx={{ flex: 1, textAlign: modoDetalhe ? 'left' : 'center', p: 0 }}>
-        <Typography variant={modoDetalhe ? 'h4' : 'h6'} color="primary" gutterBottom noWrap={!modoDetalhe}>
-          {info.titulo}
+      <CardContent sx={{ flexGrow: 1 }}>
+        <Typography
+          variant="h6"
+          align="center"
+          color="#2196f3"
+          gutterBottom
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {animeData.titulo}
         </Typography>
 
-        <Box display="flex" alignItems="center" justifyContent="space-between" mt={1} px={0.5}>
-          <Box textAlign="left">
-            <Typography variant="body2">
-              <strong>Início:</strong> {info.inicio || '—'}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Fim:</strong> {info.fim || '—'}
-            </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="body2"><strong>Início:</strong> {formatarData(animeData.startDate)}</Typography>
+            <Typography variant="body2"><strong>Fim:</strong> {formatarData(animeData.endDate)}</Typography>
           </Box>
-          {isAutenticado && (
-            <IconButton onClick={toggleFav} color="primary">
-              {isFav ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-            </IconButton>
-          )}
+          <IconButton
+            onClick={handleToggleFavorito}
+            sx={{ color: jaFavoritado ? 'red' : 'white', ml: 1 }}
+          >
+            <FavoriteIcon />
+          </IconButton>
         </Box>
 
         {modoDetalhe && (
-          <>
-            <Typography variant="body2" paragraph mt={2}>
-              {info.sinopse || 'Sem sinopse disponível.'}
-            </Typography>
-            <Box display="flex" gap={1} flexWrap="wrap">
-              {info.rating && <Chip label={`Rating: ${info.rating}%`} size="small" color="primary" />}
-              {info.episodios && <Chip label={`Eps: ${info.episodios}`} size="small" color="primary" />}
-            </Box>
-          </>
+          <Typography sx={{ mt: 2 }}>
+            {animeData.synopsis || 'Sem descrição disponível.'}
+          </Typography>
         )}
       </CardContent>
-
-      <Snackbar
-        open={snack}
-        autoHideDuration={3000}
-        onClose={() => setSnack(false)}
-        message="Anime salvo nos favoritos"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
     </Card>
   );
 }
