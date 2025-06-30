@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-const compression = require('compression'); // ✅ Adicionado
+const compression = require('compression'); 
+const helmet = require('helmet');
+
 const sequelize = require('./src/config/database');
 
 const User = require('./src/models/user');
@@ -15,6 +17,7 @@ const favoritoRoutes = require('./src/routes/animeFavorito');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+app.use(helmet());              // ⬅️ ADICIONADO
 app.use(cors());
 app.use(compression()); 
 app.use(express.json());
@@ -37,5 +40,5 @@ sequelize.sync({ alter: true })
     app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
   })
   .catch((err) => {
-    console.error(' Erro ao sincronizar banco:', err);
+    console.error('Erro ao sincronizar banco:', err);
   });

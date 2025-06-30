@@ -6,7 +6,6 @@ const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/user');
 
-// Winston incluído diretamente
 const winston = require('winston');
 const logger = winston.createLogger({
   level: 'info',
@@ -16,14 +15,13 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/app.log' }), // cria pasta logs automaticamente
+    new winston.transports.File({ filename: 'logs/app.log' }), 
   ],
 });
 
 const router = express.Router();
 const SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
-// Limita tentativas de login para evitar brute force
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
