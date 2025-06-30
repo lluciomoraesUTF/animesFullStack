@@ -53,11 +53,11 @@ function CadastroAnime() {
         body: JSON.stringify({
           titulo,
           poster,
-          synopsis: sinopse,
-          episodeCount: Number(episodios),
-          averageRating: rating,
-          startDate: inicio,
-          endDate: fim,
+          synopsis: sinopse,               // ✅ nome que o backend espera
+          episodeCount: Number(episodios), // ✅ nome correto
+          averageRating: rating,           // ✅ nome correto
+          startDate: inicio,               // ✅ nome correto
+          endDate: fim,                    // ✅ nome correto
         }),
       });
 

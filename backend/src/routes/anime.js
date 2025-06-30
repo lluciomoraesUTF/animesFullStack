@@ -5,14 +5,15 @@ const Anime = require('../models/anime');
 const User = require('../models/user');
 
 const router = express.Router();
-const SECRET = 'JWToken';
+const SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
 function autenticar(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Token ausente.' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token ausente ou malformado.' });
+  }
 
   const token = authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Token ausente.' });
 
   try {
     const decoded = jwt.verify(token, SECRET);
@@ -66,6 +67,7 @@ router.post('/', autenticar, async (req, res) => {
 
     res.status(201).json(anime);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Erro ao criar anime.' });
   }
 });
@@ -82,7 +84,7 @@ router.put('/:id', autenticar, async (req, res) => {
     }
 
     if (anime.userId !== req.user.id) {
-      return res.status(403).json({ error: 'Você não tem permissão para editar este anime.' });
+      return res.status(403).json({ error: 'Sem permissão para editar este anime.' });
     }
 
     await anime.update({
@@ -102,7 +104,6 @@ router.put('/:id', autenticar, async (req, res) => {
   }
 });
 
-// Deletar anime
 router.delete('/:id', autenticar, async (req, res) => {
   const animeId = req.params.id;
 
@@ -114,12 +115,13 @@ router.delete('/:id', autenticar, async (req, res) => {
     }
 
     if (anime.userId !== req.user.id) {
-      return res.status(403).json({ error: 'Você não tem permissão para deletar este anime.' });
+      return res.status(403).json({ error: 'Sem permissão para deletar este anime.' });
     }
 
     await anime.destroy();
     res.status(204).send();
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Erro ao deletar anime.' });
   }
 });
