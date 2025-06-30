@@ -76,7 +76,7 @@ function CardAnime({ anime, onClick, modoDetalhe = false, isFavorito = false }) 
       sx={{
         bgcolor: '#1e1e1e',
         color: 'white',
-        width: '100%', // ✅ Agora o card se adapta ao Grid
+        width: 250,
         display: 'flex',
         flexDirection: 'column',
         cursor: onClick ? 'pointer' : 'default',
